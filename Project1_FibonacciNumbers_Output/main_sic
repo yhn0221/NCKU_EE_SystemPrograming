@@ -1,0 +1,73 @@
+G05P1    START   1000              ;程式由1000位址開始執行
+MAIN     J       COMPUTE
+X1       WORD    999
+F1       WORD    1
+F2       WORD    1
+F3       WORD    1
+
+COMPUTE  LDA     F1
+         ADD     F2
+         STA     F3                ;F3=F1+F2
+         COMP    X1
+         JEQ     DONE1             ;拿F3
+         JGE     DONE2             ;拿F2
+         LDA     F2
+         STA     F1                ;F1=F2
+         LDA     F3                ;F2=F3
+         STA     F2
+         J       COMPUTE
+
+	
+DONE1    STA     TEMP              ;先保存資料，讓後面可以直接使用
+         LDX     ZERO              ;初始化暫存器X
+         J       BTOCH
+
+DONE2    LDA     F2                ;把之前運算完的數值資料載入A暫存器
+         STA     TEMP              ;先保存資料，讓後面可以直接使用
+         LDX     ZERO              ;初始化暫存器X
+         J       BTOCH
+
+BTOCH    LDA     TEMP              ;將目前還未轉換成字元的資料載入暫存器A
+         DIV     TEN               ;暫存器A除以10，把商存入暫存器A中
+         STA     QUO               ;商存入變數QUO
+         MUL     TEN               ;乘10
+         STA     QUO2              ;
+         LDA     TEMP              ;把原本運算前的值載入暫存器A
+         SUB     QUO2              ;將得到餘數，存進暫存器A
+         ADD     BINASC            ;餘數加48，轉為ASCII
+         STCH    BUFFER,X          ;字元存入BUFFER
+         LDA     QUO               ;把商存入暫存器A
+         COMP    ZERO              ;商是不是0?
+         JEQ     CHDONE            ;如果商是0，運算結束，不為0繼續執行
+         STA     TEMP              ;本輪的商存入TEMP，作為下輪計算的對象
+         J       BTOCH             ;如果商不為0，繼續算
+
+
+	
+CHDONE   STX     INDEX             ;紀錄答案長度，輸出字元
+         LDX     ZERO              ;初始化索引
+PRINT    TD      OUTDIV            ;測試輸出機器準備狀態
+         JEQ     PRINT             ;輸出機器來沒準備好就回到PRINT
+         LDX     INDEX             ;讀取答案尾巴
+         LDCH    BUFFER,X          ;自BUFFER載入一個字元到暫存器A
+         WD      OUTDIV            ;輸出機器輸出暫存器A中的字元
+         LDA     INDEX             ;index-1，讀
+         SUB     ONE               ;減1
+         STA     INDEX             ;存回INDEX
+         COMP    ZERO              ;如果還有剩，繼續輸出
+         JLT     ENDPRI            ;INDEX值如果小於0，就結束
+         J       PRINT             ;繼續輸出
+ENDPRI   RSUB                      ;返回
+
+		
+ZERO     WORD    0
+ONE      WORD    1
+TEN      WORD    10                ;用來取餘數
+BINASC   WORD    48                ;用來把二進位轉換為ASCII，加48
+BUFFER   RESB    8                 ;用來儲存要輸出的字元，因為2^24是8位數，所以最多只需要8個空位，宣告BYTE是因為字元儲存單位是1byte
+OUTDIV   BYTE    X'05'             ;輸出的硬體
+TEMP     RESW    1                 ;用來記錄/10之前的值
+QUO      RESW    1                 ;用來記錄/10的商
+QUO2     RESW    1                 ;用來記錄商*10
+
+
