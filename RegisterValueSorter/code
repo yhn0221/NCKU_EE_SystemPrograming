@@ -1,0 +1,278 @@
+SP1451   START   1000
+MAIN     STA     BUF               ; 將 24-bit 資料存到暫存區
+         LDX     ZERO
+         STX     IDX
+         LDA     BUF               ; 取暫存區內的資料
+         DIV     SHRDG3            ; 右移 16 位（取最高位數字）
+         DIV     SHRDG2            ; 右移 4 位（取最高位數字） 
+         AND     F                 ; 僅保留 4-bit
+         STA     NUM, X            ; 存入第1個數字位置 num[0]
+         LDA     IDX
+         ADD     THR 
+         STA     IDX
+         LDX     IDX
+         LDA     BUF               ; 取暫存區內的資料
+         DIV     SHRDG2            ; 右移 16 位（取最高位數字）
+         DIV     SHRDG2            ; 右移 16 位（取最高位數字）
+         AND     F                 ; 僅保留 4-bit
+         STA     NUM, X            ; 存入第2個數字位置 num[1]
+         LDA     IDX
+         ADD     THR 
+         STA     IDX
+         LDX     IDX
+         LDA     BUF               ; 取暫存區內的資料
+         DIV     SHRDG2            ; 右移 12 位（取最高位數字）
+         DIV     SHRDG1            ;
+         AND     F                 ; 僅保留 4-bit
+         STA     NUM, X            ; 存入第3個數字位置 num[2]
+         LDA     IDX
+         ADD     THR 
+         STA     IDX
+         LDX     IDX
+         LDA     BUF               ; 取暫存區內的資料
+         DIV     SHRDG2            ; 右移 8 位（取最高位數字）
+         AND     F                 ; 僅保留 4-bit
+         STA     NUM, X            ; 存入第4個數字位置 num[3]
+         LDA     IDX
+         ADD     THR 
+         STA     IDX
+         LDX     IDX
+         LDA     BUF               ; 取暫存區內的資料
+         DIV     SHRDG1            ; 右移 4 位（取最高位數字）
+         AND     F                 ; 僅保留 4-bit
+         STA     NUM, X            ; 存入第5個數字位置 num[4]
+         LDA     IDX
+         ADD     THR 
+         STA     IDX
+         LDX     IDX
+         LDA     BUF               ; 取暫存區內的資料
+         AND     F                 ; 僅保留 4-bit
+         STA     NUM, X            ; 存入第6個數字位置 num[5]
+         LDA     IDX
+         ADD     THR 
+         STA     IDX
+         LDX     IDX 
+SORT     LDX     ZERO              ; 外層迴圈計數器
+         STX     OUTC              ; 外圍次數 OUTC=0
+OUTER    LDA     OUTC              ; 讀取外圍次數
+         STA     INC
+         COMP    LIMIT             ; OUTC和6比大小
+         JLT     INNER             ; 外圈執行次數在0~5 進入內圈
+         J       DONE              ; 外圈執行次數6 離開
+INNER    LDX     OUTC
+         LDA     NUM, X            ; 載入該輪NUM[X]
+         STA     TEMP              ; 將該輪NUM[X] 暫存到 TEMP
+         LDA     INC               ; INC+4
+         ADD     THR               ; INC+4
+         STA     INC               ; INC+4
+         LDX     INC               ; X = INC (已經+4，只到下一個了)
+         LDA     NUM, X            ; A=NUM[INC]
+         COMP    TEMP              ; 比較 NUM[X+1] 和 TEMP（NUM[X]）
+         JLT     SWAP              ; 如果 NUM[X+1] < NUM[X]，執行交換
+         J       INNEXT            ; 否則處理內圈下一組數字
+SWAP     LDX     OUTC
+         STA     NUM, X            ; 將 NUM[X+1] 存到 NUM[X]
+         LDX     INC               ; X= NUM[X+1]索引
+         LDA     TEMP              ; 載入 TEMP（NUM[X] 的舊值）
+         STA     NUM, X            ; 將 TEMP 存到 NUM[X+1]，完成交換
+INNEXT   LDA     INC               ; A = INC
+         COMP    LIMIT             ; 看看INC有沒有超過24
+         JLT     INNER             ; 如果 INC<24 回到內圈，或下到OUTNEXT修改OUTC
+OUTNEXT  LDA     OUTC              ; A = OUTC 
+         ADD     THR               ; OUTC  = OUTC +4
+         STA     OUTC              ; 更新
+         J       OUTER             ; 跳回外圈，在外圈判斷有沒有超果24
+DONE     LDX     ZERO              ; X=0, 用來存取 NUM[0]
+         LDA     ZERO
+         STA     BUF
+         LDA     NUM, X            ; A = NUM[0]
+         MUL     SHRDG3            ; A = NUM[0] * 16^4
+         MUL     SHRDG2            ; A = NUM[0] * 16^1 (左移5 BYTE)
+         STA     BUF               ; 暫存結果於 BUF，且覆蓋原本BUF的值
+         LDA     ZERO
+         STA     IDX               ; IDX=0 
+         LDA     IDX
+         ADD     THR 
+         STA     IDX               ; IDX=4，用來存取 NUM[1]
+         LDX     IDX
+         LDA     NUM, X            ; A=NUM[1]
+         MUL     SHRDG2            ; A=NUM[1]*16^4
+         MUL     SHRDG2            ; A=NUM[1]*16^4          
+         ADD     BUF               ; BUF    + (NUM[1]*16^4)
+         STA     BUF   
+         LDA     IDX
+         ADD     THR 
+         STA     IDX               ; IDX=8，用來存取 NUM[2]
+         LDX     IDX
+         LDA     NUM, X            ; A=NUM[2]
+         MUL     SHRDG2            ; A=NUM[2]*16^3
+         MUL     SHRDG1            ; A=NUM[2]*16^3
+         ADD     BUF   
+         STA     BUF   
+         LDA     IDX
+         ADD     THR 
+         STA     IDX               ; IDX=12，用來存取 NUM[3]
+         LDX     IDX
+         LDA     NUM, X             ; A=NUM[3]
+         MUL     SHRDG2            ; A=NUM[3]*16^2
+         ADD     BUF   
+         STA     BUF   
+         LDA     IDX
+         ADD     THR 
+         STA     IDX               ; IDX=16，用來存取 NUM[4]
+         LDX     IDX
+         LDA     NUM, X             ; A=NUM[4]
+         MUL     SHRDG1            ; A=NUM[4]*16^1
+         ADD     BUF   
+         STA     BUF   
+         LDA     IDX
+         ADD     THR 
+         STA     IDX               ; IDX=20，用來存取 NUM[5]
+         LDX     IDX
+         LDA     NUM, X             ; A=NUM[5]
+         ADD     BUF               ; 將最後一位加回去
+         STA     BUF               ; 此時BUF   為完整重組後24-bit值
+         LDA     BUF               ; 將BUF   值載回A暫存器
+         LDX     ZERO
+BTOCH    LDA     BUF
+         DIV     SHRDG1
+         STA     QUO
+         MUL     SHRDG1
+         STA     QUO2
+         LDA     BUF
+         SUB     QUO2
+         ADD     BINASC
+         COMP    TRAN
+         JLT     LITTLE            ; 0~9
+         J       BIG               ; 10~15
+LITTLE   STCH    BUFFER,X
+         STX     IDX
+         LDA     IDX
+         COMP    FIVE
+         JEQ     CHDONE
+         LDA     QUO
+         STA     BUF
+         TIX     ONE
+         J       BTOCH
+BIG      COMP    TRAN1
+         JLT     BIG10
+         COMP    TRAN2
+         JLT     BIG11
+         COMP    TRAN3
+         JLT     BIG12
+         COMP    TRAN4
+         JLT     BIG13
+         COMP    TRAN5
+         JLT     BIG14
+         J       BIG15
+BIG10    LDCH    ACH
+         STCH    BUFFER,X
+         STX     IDX
+         LDA     IDX
+         COMP    FIVE
+         JEQ     CHDONE
+         LDA     QUO
+         STA     BUF
+         TIX     ONE
+         J       BTOCH
+BIG11    LDCH    BCH
+         STCH    BUFFER,X
+         STX     IDX
+         LDA     IDX
+         COMP    FIVE
+         JEQ     CHDONE
+         LDA     QUO
+         STA     BUF
+         TIX     ONE
+         J       BTOCH
+BIG12    LDCH    CCH
+         STCH    BUFFER,X
+         STX     IDX
+         LDA     IDX
+         COMP    FIVE
+         JEQ     CHDONE
+         LDA     QUO
+         STA     BUF
+         TIX     ONE
+         J       BTOCH
+BIG13    LDCH    DCH
+         STCH    BUFFER,X
+         STX     IDX
+         LDA     IDX
+         COMP    FIVE
+         JEQ     CHDONE
+         LDA     QUO
+         STA     BUF
+         TIX     ONE
+         J       BTOCH
+BIG14    LDCH    ECH
+         STCH    BUFFER,X
+         STX     IDX
+         LDA     IDX
+         COMP    FIVE
+         JEQ     CHDONE
+         LDA     QUO
+         STA     BUF
+         TIX     ONE
+         J       BTOCH
+BIG15    LDCH    FCH
+         STCH    BUFFER,X
+         STX     IDX
+         LDA     IDX
+         COMP    FIVE
+         JEQ     CHDONE
+         LDA     QUO
+         STA     BUF
+         TIX     ONE
+         J       BTOCH
+CHDONE   STX     LENNUM
+         LDX     ZERO
+PRINT    TD      OUTDIV
+         JEQ     PRINT
+         LDX     LENNUM
+         LDCH    BUFFER,X
+         WD      OUTDIV
+         LDA     LENNUM
+         SUB     ONE
+         STA     LENNUM
+         COMP    ZERO
+         JLT     ENDPRI
+         J       PRINT
+ENDPRI   RSUB
+OUTC     RESW    1                 ; 計算外圈次數
+INC      RESW    1                 ; 計算內圈次數
+LIMIT    WORD    15                ; 限制INC、OUTC不要超過 24
+ZERO     WORD    0                 ; 常數 0
+THR      WORD    3
+FIVE     WORD    5
+ONE      WORD    1
+TRAN     WORD    58                ; 餘數超過10，就特殊處理
+TRAN1    WORD    59                ; 餘數10
+TRAN2    WORD    60                ; 餘數11
+TRAN3    WORD    61                ; 餘數12
+TRAN4    WORD    62                ; 餘數13
+TRAN5    WORD    63                ; 餘數14
+FOUR     WORD    4                 ; 常數 4（每個數字佔用 4 bytes）
+TEMP     RESW    1                 ; 暫存數字
+BUF      RESW    1                 ; 暫存存放原始24bit
+NUM      RESB    18                ; 存放第 1~6 個數字
+IDX      RESW    1                 ; 用來索引要存在NUM的哪 
+F        WORD    15                ; 用來只保留最尾端的4-bit
+SHRDG3   WORD    4096
+SHRDG2   WORD    256
+QUO      RESW    1
+QUO2     RESW    1
+BINASC   WORD    48
+TEN      WORD    10
+SHRDG1   WORD    16
+BUFFER   RESB    6
+LENNUM   RESW    1
+ACH      BYTE    C'A'
+BCH      BYTE    C'B'
+CCH      BYTE    C'C'
+DCH      BYTE    C'D'
+ECH      BYTE    C'E'
+FCH      BYTE    C'F'
+OUTDIV   BYTE    X'05'
+         RSUB
+         END     MAIN
