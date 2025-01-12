@@ -54,6 +54,6 @@
 Answer=987
 
 ## 檔案結構
-- `main`：SIC 程式的原始碼。
+- `fibonacci`：SIC 程式的原始碼。
 - `README.md`：程式文檔（本檔案）。
 
